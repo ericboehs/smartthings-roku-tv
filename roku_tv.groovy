@@ -8,6 +8,15 @@ metadata {
     capability "Switch"
     capability "Polling"
     capability "Refresh"
+    command "volume_up"
+    command "volume_down"
+    command "volume_mute"
+    command "nickjr"
+    command "disneyjr"
+    command "hdmi1"
+    command "hdmi2"
+    command "hdmi3"
+    command "hdmi4"
   }
 
   simulator {
@@ -23,8 +32,44 @@ metadata {
       state "default", label:"", action:"refresh.refresh", icon:"st.secondary.refresh"
     }
 
+    standardTile("volume_up", "device.switch", inactiveLabel: false, decoration: "flat") {
+      state "default", label:"Vol +", action:"volume_up", icon:"st.custom.sonos.unmuted"
+    }
+
+    standardTile("volume_down", "device.switch", inactiveLabel: false, decoration: "flat") {
+      state "default", label:"Vol -", action:"volume_down", icon:"st.custom.sonos.unmuted"
+    }
+
+    standardTile("volume_mute", "device.switch", inactiveLabel: false, decoration: "flat") {
+      state "default", label:"Mute", action:"volume_mute", icon:"st.custom.sonos.muted"
+    }
+
+    standardTile("nickjr", "device.switch", inactiveLabel: false, decoration: "flat") {
+      state "default", label:"Nick Jr.", action:"nickjr", icon:"st.Electronics.electronics12"
+    }
+
+    standardTile("disneyjr", "device.switch", inactiveLabel: false, decoration: "flat") {
+      state "default", label:"Disney Jr.", action:"disneyjr", icon:"st.Electronics.electronics12"
+    }
+
+    standardTile("hdmi1", "device.switch", inactiveLabel: false, decoration: "flat") {
+      state "default", label:"HDMI 1", action:"hdmi1", icon:"st.Electronics.electronics12"
+    }
+
+    standardTile("hdmi2", "device.switch", inactiveLabel: false, decoration: "flat") {
+      state "default", label:"HDMI 2", action:"hdmi2", icon:"st.Electronics.electronics12"
+    }
+
+    standardTile("hdmi3", "device.switch", inactiveLabel: false, decoration: "flat") {
+      state "default", label:"HDMI 3", action:"hdmi3", icon:"st.Electronics.electronics12"
+    }
+
+    standardTile("hdmi4", "device.switch", inactiveLabel: false, decoration: "flat") {
+      state "default", label:"HDMI 4", action:"hdmi4", icon:"st.Electronics.electronics12"
+    }
+
     main "button"
-    details(["button", "refresh"])
+    details(["button", "refresh", "volume_mute", "volume_down", "volume_up", "hdmi1", "hdmi2", "hdmi3", "hdmi4", "nickjr", "disneyjr"])
   }
 }
 
@@ -42,13 +87,11 @@ def parse(String description) {
   def msg = parseLanMessage(description)
 
   if (msg.body && msg.body.contains("PowerOn")) {
-    log.debug "TV on"
     sendEvent(name: "switch", value: "on")
   }
 }
 
 def on() {
-  log.debug "Executing 'on'"
   sendEvent(name: "switch", value: "on")
 
   sendHubCommand(new physicalgraph.device.HubAction (
@@ -58,21 +101,48 @@ def on() {
     [:]
   ))
 
-  def postResult = new physicalgraph.device.HubAction(
-    method: "POST",
-    path: "/keypress/Power",
-    headers: [ HOST: "${deviceIp}:8060" ],
-  )
+  keypress('Power')
 }
 
 def off() {
-  log.debug "Executing 'off'"
   sendEvent(name: "switch", value: "off")
-  def result = new physicalgraph.device.HubAction(
-    method: "POST",
-    path: "/keypress/PowerOff",
-    headers: [ HOST: "${deviceIp}:8060" ],
-  )
+  keypress('PowerOff')
+}
+
+def volume_up() {
+  keypress('VolumeUp')
+}
+
+def volume_down() {
+  keypress('VolumeDown')
+}
+
+def volume_mute() {
+  keypress('VolumeMute')
+}
+
+def nickjr() {
+  launchApp('66595')
+}
+
+def disneyjr() {
+  launchApp('34278')
+}
+
+def hdmi1() {
+  keypress('InputHDMI1')
+}
+
+def hdmi2() {
+  keypress('InputHDMI2')
+}
+
+def hdmi3() {
+  keypress('InputHDMI3')
+}
+
+def hdmi4() {
+  keypress('InputHDMI4')
 }
 
 def poll() {
@@ -92,4 +162,22 @@ def queryDeviceState() {
     path: "/query/device-info",
     headers: [ HOST: "${deviceIp}:8060" ]
   ))
+}
+
+def keypress(key) {
+  log.debug "Executing '${key}'"
+  def result = new physicalgraph.device.HubAction(
+    method: "POST",
+    path: "/keypress/${key}",
+    headers: [ HOST: "${deviceIp}:8060" ],
+  )
+}
+
+def launchApp(appId) {
+  log.debug "Executing 'launchApp ${appId}'"
+  def result = new physicalgraph.device.HubAction(
+    method: "POST",
+    path: "/launch/${appId}",
+    headers: [ HOST: "${deviceIp}:8060" ],
+  )
 }
